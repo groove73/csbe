@@ -6,4 +6,4 @@ cors:
 
 api:
   charging:
-    key: ${CHARGING_API_KEY:63341670171bf921f279ee9868d18e3879513437959c396db66aa153305c5909}
+    key: ${CHARGING_API_KEY:myKey}
