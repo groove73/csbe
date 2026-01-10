@@ -49,29 +49,30 @@ public class SecurityConfig {
                         .requestMatchers(org.springframework.http.HttpMethod.OPTIONS, "/**").permitAll()
                         .anyRequest().authenticated())
                 .oauth2ResourceServer(oauth2 -> oauth2
-                        .jwt(jwt -> jwt.decoder(jwtDecoder())));
+                        .authenticationManagerResolver(authenticationManagerResolver()));
 
         return http.build();
     }
 
     @Bean
-    public JwtDecoder jwtDecoder() {
-        NimbusJwtDecoder supabaseDecoder = NimbusJwtDecoder.withJwkSetUri(jwkSetUri).build();
+    public org.springframework.security.authentication.AuthenticationManagerResolver<jakarta.servlet.http.HttpServletRequest> authenticationManagerResolver() {
+        java.util.Map<String, org.springframework.security.authentication.AuthenticationManager> authenticationManagers = new java.util.HashMap<>();
 
+        // Supabase
+        org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationProvider supabaseProvider = new org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationProvider(
+                NimbusJwtDecoder.withJwkSetUri(jwkSetUri).build());
+        authenticationManagers.put("https://xvzylaubzixvlrzjrdon.supabase.co/auth/v1", supabaseProvider::authenticate);
+
+        // Guest
         SecretKey key = new SecretKeySpec(guestSecret.getBytes(StandardCharsets.UTF_8), "HmacSHA512");
-        NimbusJwtDecoder guestDecoder = NimbusJwtDecoder.withSecretKey(key)
-                .macAlgorithm(org.springframework.security.oauth2.jose.jws.MacAlgorithm.HS512)
-                .build();
+        org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationProvider guestProvider = new org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationProvider(
+                NimbusJwtDecoder.withSecretKey(key)
+                        .macAlgorithm(org.springframework.security.oauth2.jose.jws.MacAlgorithm.HS512)
+                        .build());
+        authenticationManagers.put("charging-station-guest", guestProvider::authenticate);
 
-        return token -> {
-            try {
-                // Try Guest decoder first (HS256)
-                return guestDecoder.decode(token);
-            } catch (Exception e) {
-                // Fallback to Supabase (RS256)
-                return supabaseDecoder.decode(token);
-            }
-        };
+        return new org.springframework.security.oauth2.server.resource.authentication.JwtIssuerAuthenticationManagerResolver(
+                authenticationManagers::get);
     }
 
     @Value("${cors.allowed-origins:http://localhost:3000}")

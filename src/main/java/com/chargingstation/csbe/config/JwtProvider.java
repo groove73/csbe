@@ -23,6 +23,7 @@ public class JwtProvider {
 
         return Jwts.builder()
                 .subject(email)
+                .claim("iss", "charging-station-guest")
                 .claim("is_guest", true)
                 .issuedAt(new Date())
                 .expiration(new Date(System.currentTimeMillis() + expirationMs))
