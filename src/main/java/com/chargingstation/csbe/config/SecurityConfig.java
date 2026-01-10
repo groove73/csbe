@@ -60,9 +60,12 @@ public class SecurityConfig {
         public org.springframework.security.authentication.AuthenticationManagerResolver<jakarta.servlet.http.HttpServletRequest> authenticationManagerResolver() {
                 java.util.Map<String, org.springframework.security.authentication.AuthenticationManager> authenticationManagers = new java.util.HashMap<>();
 
-                // Supabase (RS256/ES256 with JWKS)
+                // Supabase (HS256 with Shared Secret)
+                SecretKey supabaseKey = new SecretKeySpec(guestSecret.getBytes(StandardCharsets.UTF_8), "HmacSHA256");
                 org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationProvider supabaseProvider = new org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationProvider(
-                                NimbusJwtDecoder.withJwkSetUri(jwkSetUri).build());
+                                NimbusJwtDecoder.withSecretKey(supabaseKey)
+                                                .macAlgorithm(org.springframework.security.oauth2.jose.jws.MacAlgorithm.HS256)
+                                                .build());
                 authenticationManagers.put("https://xvzylaubzixvlrzjrdon.supabase.co/auth/v1",
                                 supabaseProvider::authenticate);
 
