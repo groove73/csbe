@@ -26,10 +26,10 @@ spring:
     oauth2:
       resourceserver:
         jwt:
-          jwk-set-uri: https://xvzylaubzixvlrzjrdon.supabase.co/auth/v1/.well-known/jwks.json
+          jwk-set-uri: https://xvzylaubzixvlrzjrdon.supabase.co/auth/v1/.well-known/jwks.json ## 미사용
 
 app:
   jwt:
     secret: ${JWT_SECRET:myKey}
   oauth2:
-    redirect-uri: ${OAUTH2_REDIRECT_URI:http://localhost:3000}
+    redirect-uri: ${OAUTH2_REDIRECT_URI:http://localhost:3000} ## 미사용
