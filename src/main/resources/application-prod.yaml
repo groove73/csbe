@@ -7,3 +7,27 @@ cors:
 api:
   charging:
     key: ${CHARGING_API_KEY:myKey}
+
+spring:
+  main:
+    allow-bean-definition-overriding: true
+  datasource:
+    url: ${DB_URL:myKey}
+    username: ${DB_USER:myKey}
+    password: ${DB_PASSWORD:myKey}
+    driver-class-name: org.postgresql.Driver
+  jpa:
+    hibernate:
+      ddl-auto: update
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.PostgreSQLDialect
+  security:
+    oauth2:
+      resourceserver:
+        jwt:
+          jwk-set-uri: https://xvzylaubzixvlrzjrdon.supabase.co/auth/v1/jwks.json
+
+app:
+  jwt:
+    secret: ${JWT_SECRET:myKey}
