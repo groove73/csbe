@@ -10,7 +10,6 @@ import org.springframework.web.bind.annotation.*;
 @RestController
 @RequestMapping("/api/auth/guest")
 @RequiredArgsConstructor
-@CrossOrigin(origins = "*")
 public class GuestAuthController {
 
     private final JwtProvider jwtProvider;

@@ -17,7 +17,6 @@ import java.util.Map;
 @RestController
 @RequestMapping("/api/stations")
 @RequiredArgsConstructor
-@CrossOrigin(origins = "*") // For development, allow all origins
 public class ChargingStationController {
 
     private final GetChargingStationUseCase getChargingStationUseCase;
