@@ -3,6 +3,8 @@ spring:
     active: ${profile:local}
   main:
     allow-bean-definition-overriding: true
-
+    lazy-initialization: true
+  jpa:
+    open-in-view: false
 server:
   port: 8080

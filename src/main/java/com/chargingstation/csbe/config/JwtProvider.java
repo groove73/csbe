@@ -1,33 +1,38 @@
 package com.chargingstation.csbe.config;
 
-import io.jsonwebtoken.Jwts;
-import io.jsonwebtoken.security.Keys;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
+import org.springframework.security.oauth2.jwt.JwtClaimsSet;
+import org.springframework.security.oauth2.jwt.JwtEncoder;
+import org.springframework.security.oauth2.jwt.JwtEncoderParameters;
+import org.springframework.security.oauth2.jose.jws.MacAlgorithm;
+import org.springframework.security.oauth2.jwt.JwsHeader;
 
-import javax.crypto.SecretKey;
-import java.nio.charset.StandardCharsets;
-import java.util.Date;
+import java.time.Instant;
 
 @Component
 public class JwtProvider {
 
-    @Value("${app.jwt.secret}")
-    private String secret;
+    private final JwtEncoder jwtEncoder;
 
     @Value("${app.jwt.expiration-ms:604800000}") // Default 7 days
     private long expirationMs;
 
-    public String generateGuestToken(String email) {
-        SecretKey key = Keys.hmacShaKeyFor(secret.getBytes(StandardCharsets.UTF_8));
+    public JwtProvider(JwtEncoder jwtEncoder) {
+        this.jwtEncoder = jwtEncoder;
+    }
 
-        return Jwts.builder()
+    public String generateGuestToken(String email) {
+        Instant now = Instant.now();
+        JwtClaimsSet claims = JwtClaimsSet.builder()
                 .subject(email)
                 .claim("iss", "charging-station-guest")
                 .claim("is_guest", true)
-                .issuedAt(new Date())
-                .expiration(new Date(System.currentTimeMillis() + expirationMs))
-                .signWith(key)
-                .compact();
+                .issuedAt(now)
+                .expiresAt(now.plusMillis(expirationMs))
+                .build();
+
+        JwsHeader jwsHeader = JwsHeader.with(MacAlgorithm.HS512).build();
+        return jwtEncoder.encode(JwtEncoderParameters.from(jwsHeader, claims)).getTokenValue();
     }
 }

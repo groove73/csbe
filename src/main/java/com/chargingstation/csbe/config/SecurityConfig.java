@@ -17,6 +17,9 @@ import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
+import org.springframework.security.oauth2.jwt.JwtEncoder;
+import org.springframework.security.oauth2.jwt.NimbusJwtEncoder;
+import com.nimbusds.jose.jwk.source.ImmutableSecret;
 
 @Configuration
 @EnableWebSecurity
@@ -79,6 +82,12 @@ public class SecurityConfig {
 
                 return new org.springframework.security.oauth2.server.resource.authentication.JwtIssuerAuthenticationManagerResolver(
                                 authenticationManagers::get);
+        }
+
+        @Bean
+        public JwtEncoder jwtEncoder() {
+                SecretKey key = new SecretKeySpec(guestSecret.getBytes(StandardCharsets.UTF_8), "HmacSHA512");
+                return new NimbusJwtEncoder(new ImmutableSecret<>(key));
         }
 
         @Value("${cors.allowed-origins:http://localhost:3000}")
