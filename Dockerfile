@@ -5,7 +5,7 @@ COPY . .
 RUN chmod +x gradlew
 # Remove local gradle.properties (contains Mac-specific java.home path)
 RUN rm -f gradle.properties
-RUN ./gradlew quarkusBuild --no-daemon -Dquarkus.package.type=uber-jar
+RUN ./gradlew quarkusBuild --no-daemon
 
 # Package stage
 FROM eclipse-temurin:25-jre-jammy
