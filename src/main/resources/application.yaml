@@ -9,15 +9,7 @@ quarkus:
   smallrye-jwt:
     silent: true
 
-# JWT / Smallrye JWT configuration (Supabase JWKS)
-mp:
-  jwt:
-    verify:
-      publickey:
-        location: "https://xvzylaubzixvlrzjrdon.supabase.co/auth/v1/.well-known/jwks.json"
-      issuer: "https://xvzylaubzixvlrzjrdon.supabase.co/auth/v1"
-
-# Application-level config (overridden per profile)
+# Application-level config (overridden per profile with defaults)
 app:
   jwt:
     secret: "${JWT_SECRET}"

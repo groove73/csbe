@@ -3,8 +3,6 @@
 # All secrets MUST be provided via environment variables.
 # ============================================================
 quarkus:
-  smallrye-jwt:
-    silent: true
   http:
     cors:
       enabled: true
@@ -23,32 +21,10 @@ quarkus:
       max-size: 10
   hibernate-orm:
     database:
-      generation: none # No DDL in prod — manage schema manually
+      generation: none  # No DDL in prod — manage schema manually
     sql-load-script: no-file
   log:
     level: WARN
     category:
       "com.chargingstation":
         level: INFO
-
-# ============================================================
-# Common configuration (applied to all profiles)
-# ============================================================
-
-# JWT / Smallrye JWT configuration (Supabase JWKS)
-mp:
-  jwt:
-    verify:
-      publickey:
-        location: "https://xvzylaubzixvlrzjrdon.supabase.co/auth/v1/.well-known/jwks.json"
-      issuer: "https://xvzylaubzixvlrzjrdon.supabase.co/auth/v1"
-
-# Application-level config (overridden per profile)
-app:
-  jwt:
-    secret: "${JWT_SECRET}"
-    expiration-ms: 604800000
-
-api:
-  charging:
-    key: "${CHARGING_API_KEY}"
