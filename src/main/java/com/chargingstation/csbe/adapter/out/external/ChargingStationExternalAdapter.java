@@ -6,26 +6,34 @@ import com.chargingstation.csbe.domain.ChargingStation;
 import com.chargingstation.csbe.domain.utils.CommonCodeMapper;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import lombok.RequiredArgsConstructor;
-import org.springframework.beans.factory.annotation.Value;
-import org.springframework.stereotype.Component;
-import org.springframework.web.client.RestTemplate;
+import jakarta.enterprise.context.ApplicationScoped;
+import jakarta.inject.Inject;
+import org.eclipse.microprofile.config.inject.ConfigProperty;
 
 import java.net.URI;
+import java.net.http.HttpClient;
+import java.net.http.HttpRequest;
+import java.net.http.HttpResponse;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-@Component
-@RequiredArgsConstructor
+@ApplicationScoped
 public class ChargingStationExternalAdapter implements LoadChargingStationPort {
 
-    private final RestTemplate restTemplate = new RestTemplate();
+    private final HttpClient httpClient = HttpClient.newHttpClient();
     private final ObjectMapper objectMapper;
 
-    @Value("${api.charging.key}")
-    private String apiKey;
+    @Inject
+    @ConfigProperty(name = "api.charging.key")
+    String apiKey;
+
+    @Inject
+    public ChargingStationExternalAdapter(ObjectMapper objectMapper) {
+        this.objectMapper = objectMapper;
+    }
+
 
     @Override
     public List<ChargingStation> loadStations(String zcode) {
@@ -41,10 +49,10 @@ public class ChargingStationExternalAdapter implements LoadChargingStationPort {
                 urlBuilder.append("&zcode=").append(zcode);
             }
 
-            @SuppressWarnings("null")
             URI uri = URI.create(urlBuilder.toString());
-            String response = restTemplate.getForObject(uri, String.class);
-            return parseResponse(response);
+            HttpRequest request = HttpRequest.newBuilder().uri(uri).GET().build();
+            HttpResponse<String> response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
+            return parseResponse(response.body());
         } catch (Exception e) {
             e.printStackTrace();
             return new ArrayList<>();
@@ -65,10 +73,10 @@ public class ChargingStationExternalAdapter implements LoadChargingStationPort {
                 urlBuilder.append("&statId=").append(statId);
             }
 
-            @SuppressWarnings("null")
             URI uri = URI.create(urlBuilder.toString());
-            String response = restTemplate.getForObject(uri, String.class);
-            return parseChargerResponse(response);
+            HttpRequest request = HttpRequest.newBuilder().uri(uri).GET().build();
+            HttpResponse<String> response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
+            return parseChargerResponse(response.body());
         } catch (Exception e) {
             e.printStackTrace();
             return new ArrayList<>();
@@ -192,3 +200,4 @@ public class ChargingStationExternalAdapter implements LoadChargingStationPort {
         return value;
     }
 }
+

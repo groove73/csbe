@@ -5,17 +5,22 @@ import com.chargingstation.csbe.application.port.out.LoadChargingStationPort;
 import com.chargingstation.csbe.domain.Charger;
 import com.chargingstation.csbe.domain.ChargingStation;
 import com.chargingstation.csbe.domain.utils.CommonCodeMapper;
-import lombok.RequiredArgsConstructor;
-import org.springframework.stereotype.Service;
+import jakarta.enterprise.context.ApplicationScoped;
+import jakarta.inject.Inject;
 
 import java.util.List;
 import java.util.Map;
 
-@Service
-@RequiredArgsConstructor
+@ApplicationScoped
 public class ChargingStationService implements GetChargingStationUseCase {
 
     private final LoadChargingStationPort loadChargingStationPort;
+
+    @Inject
+    public ChargingStationService(LoadChargingStationPort loadChargingStationPort) {
+        this.loadChargingStationPort = loadChargingStationPort;
+    }
+
 
     @Override
     public List<ChargingStation> getStations(String zcode) {
@@ -32,3 +37,4 @@ public class ChargingStationService implements GetChargingStationUseCase {
         return CommonCodeMapper.getRegionMap();
     }
 }
+

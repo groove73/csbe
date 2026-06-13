@@ -1,10 +1,38 @@
-spring:
-  profiles:
-    active: ${profile:local}
-  main:
-    allow-bean-definition-overriding: true
-    lazy-initialization: true
-  jpa:
-    open-in-view: false
-server:
-  port: 8080
+# HTTP and gRPC configurations
+quarkus:
+  http:
+    port: 8080
+    cors:
+      enabled: true
+      origins: "http://localhost:3000,http://127.0.0.1:3000"
+      methods: "GET,POST,PUT,DELETE,OPTIONS"
+      headers: "Authorization,Content-Type,X-Guest-ID"
+      access-control-allow-credentials: true
+  datasource:
+    db-kind: postgresql
+    username: "${DB_USER:postgres.xvzylaubzixvlrzjrdon}"
+    password: "${DB_PASSWORD:Dbckdtjd1!!}"
+    jdbc:
+      url: "${DB_URL:jdbc:postgresql://aws-1-ap-southeast-1.pooler.supabase.com:6543/postgres?prepareThreshold=0}"
+  hibernate-orm:
+    database:
+      generation: update
+    sql-load-script: no-file
+
+# API key mapping
+api:
+  charging:
+    key: "${CHARGING_API_KEY:63341670171bf921f279ee9868d18e3879513437959c396db66aa153305c5909}"
+
+# JWT / Smallrye JWT configuration
+mp:
+  jwt:
+    verify:
+      publickey:
+        location: "https://xvzylaubzixvlrzjrdon.supabase.co/auth/v1/.well-known/jwks.json"
+      issuer: "https://xvzylaubzixvlrzjrdon.supabase.co/auth/v1"
+
+app:
+  jwt:
+    secret: "${JWT_SECRET:0rQkbM8j81/QByDqJ6Gxdgv+Zc4pRqDUXV8UWDyqKsxufCPn8fYOPG/H5GeBMpcQlfMymF9A6AAs+IlHSabmrg==}"
+    expiration-ms: 604800000

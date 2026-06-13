@@ -1,0 +1,69 @@
+syntax = "proto3";
+
+package com.chargingstation.csbe.grpc;
+
+option java_multiple_files = true;
+option java_package = "com.chargingstation.csbe.grpc";
+option java_outer_classname = "ChargingStationProto";
+
+service ChargingStationGrpcService {
+  rpc GetStations (GetStationsRequest) returns (GetStationsResponse);
+  rpc GetRegions (GetRegionsRequest) returns (GetRegionsResponse);
+  rpc GetChargerStatus (GetChargerStatusRequest) returns (GetChargerStatusResponse);
+}
+
+message GetStationsRequest {
+  string zcode = 1;
+}
+
+message ChargerGrpc {
+  string chgerId = 1;
+  string chgerType = 2;
+  string chgerTypeNm = 3;
+  string stat = 4;
+  string statNm = 5;
+  string statUpdDt = 6;
+  string lastTsdt = 7;
+  string lastTedt = 8;
+  string nowTsdt = 9;
+  string output = 10;
+  string method = 11;
+  string location = 12;
+  string limitYn = 13;
+  string limitDetail = 14;
+}
+
+message ChargingStationGrpc {
+  string statId = 1;
+  string statNm = 2;
+  string addr = 3;
+  string addrDetail = 4;
+  string lat = 5;
+  string lng = 6;
+  string useTime = 7;
+  string bnm = 8;
+  string busiId = 9;
+  string busiNm = 10;
+  string busiCall = 11;
+  string parkingFree = 12;
+  string note = 13;
+  repeated ChargerGrpc chargers = 14;
+}
+
+message GetStationsResponse {
+  repeated ChargingStationGrpc stations = 1;
+}
+
+message GetRegionsRequest {}
+
+message GetRegionsResponse {
+  map<string, string> regions = 1;
+}
+
+message GetChargerStatusRequest {
+  string statId = 1;
+}
+
+message GetChargerStatusResponse {
+  repeated ChargerGrpc chargers = 1;
+}
