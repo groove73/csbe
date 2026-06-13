@@ -46,4 +46,5 @@ build
 
 # local config
 src/main/resources/application-local.yaml
+src/main/resources/application-dev.yaml
 src/main/resources/application.yaml

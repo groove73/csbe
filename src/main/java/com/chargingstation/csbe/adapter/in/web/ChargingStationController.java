@@ -7,8 +7,9 @@ import com.chargingstation.csbe.domain.ChargingStation;
 import jakarta.annotation.security.PermitAll;
 import jakarta.inject.Inject;
 import jakarta.ws.rs.*;
+import jakarta.ws.rs.container.ContainerRequestContext;
+import jakarta.ws.rs.core.Context;
 import jakarta.ws.rs.core.MediaType;
-import org.eclipse.microprofile.jwt.JsonWebToken;
 
 import java.util.List;
 import java.util.Map;
@@ -27,19 +28,14 @@ public class ChargingStationController {
         this.guestUsageService = guestUsageService;
     }
 
-
-    @Inject
-    JsonWebToken jwt;
-
     @GET
     @PermitAll
-    public List<ChargingStation> getStations(@QueryParam("zcode") String zcode) {
-        if (jwt != null && jwt.getClaimNames() != null && jwt.containsClaim("is_guest")) {
-            Boolean isGuest = jwt.getClaim("is_guest");
-            if (Boolean.TRUE.equals(isGuest)) {
-                String email = jwt.getSubject();
-                guestUsageService.checkAndIncrement(email);
-            }
+    public List<ChargingStation> getStations(@QueryParam("zcode") String zcode,
+                                              @Context ContainerRequestContext requestContext) {
+        // GuestTokenFilter extracts guest email into request property "guest.email"
+        String guestEmail = (String) requestContext.getProperty("guest.email");
+        if (guestEmail != null) {
+            guestUsageService.checkAndIncrement(guestEmail);
         }
 
         return getChargingStationUseCase.getStations(zcode);
@@ -59,4 +55,3 @@ public class ChargingStationController {
         return getChargingStationUseCase.getChargerStatus(statId);
     }
 }
-

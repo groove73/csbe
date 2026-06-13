@@ -1,5 +1,6 @@
 package com.chargingstation.csbe.domain;
 
+import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
@@ -13,7 +14,9 @@ public class GuestUsage {
     @Id
     private String id;
 
+    @Column(columnDefinition = "integer default 0")
     private int searchCount;
+
 
     private OffsetDateTime lastSearchAt;
 

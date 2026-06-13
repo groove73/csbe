@@ -1,0 +1,54 @@
+# ============================================================
+# Prod profile  (active in packaged jar / Railway deployment)
+# All secrets MUST be provided via environment variables.
+# ============================================================
+quarkus:
+  smallrye-jwt:
+    silent: true
+  http:
+    cors:
+      enabled: true
+      # Set CORS_ORIGINS env var in Railway (comma-separated, no spaces)
+      # e.g. https://csfe-three.vercel.app,https://your-custom-domain.com
+      origins: "${CORS_ORIGINS:https://csfe-three.vercel.app}"
+      methods: "GET,POST,PUT,DELETE,OPTIONS"
+      headers: "Authorization,Content-Type,X-Guest-ID"
+      access-control-allow-credentials: true
+  datasource:
+    db-kind: postgresql
+    username: "${DB_USER}"
+    password: "${DB_PASSWORD}"
+    jdbc:
+      url: "${DB_URL:jdbc:postgresql://aws-1-ap-southeast-1.pooler.supabase.com:6543/postgres?prepareThreshold=0}"
+      max-size: 10
+  hibernate-orm:
+    database:
+      generation: none # No DDL in prod — manage schema manually
+    sql-load-script: no-file
+  log:
+    level: WARN
+    category:
+      "com.chargingstation":
+        level: INFO
+
+# ============================================================
+# Common configuration (applied to all profiles)
+# ============================================================
+
+# JWT / Smallrye JWT configuration (Supabase JWKS)
+mp:
+  jwt:
+    verify:
+      publickey:
+        location: "https://xvzylaubzixvlrzjrdon.supabase.co/auth/v1/.well-known/jwks.json"
+      issuer: "https://xvzylaubzixvlrzjrdon.supabase.co/auth/v1"
+
+# Application-level config (overridden per profile)
+app:
+  jwt:
+    secret: "${JWT_SECRET}"
+    expiration-ms: 604800000
+
+api:
+  charging:
+    key: "${CHARGING_API_KEY}"
