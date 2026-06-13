@@ -12,6 +12,9 @@ import jakarta.ws.rs.container.ContainerRequestFilter;
 import jakarta.ws.rs.ext.Provider;
 import org.eclipse.microprofile.config.inject.ConfigProperty;
 
+import javax.crypto.SecretKey;
+import javax.crypto.spec.SecretKeySpec;
+import java.util.Collections;
 import java.util.logging.Logger;
 
 /**
@@ -66,9 +69,8 @@ public class GuestTokenFilter implements ContainerRequestFilter {
     }
 
     private void handleGuestToken(SignedJWT jwt, ContainerRequestContext ctx) throws Exception {
-        byte[] secret = jwtSecret.getBytes();
-        MACVerifier verifier = new MACVerifier(secret);
-        verifier.getJWSAlgorithmSet().add(JWSAlgorithm.HS512);
+        SecretKey key = new SecretKeySpec(jwtSecret.getBytes(), "HmacSHA512");
+        MACVerifier verifier = new MACVerifier(key, Collections.singleton(JWSAlgorithm.HS512.getName()));
 
         if (!jwt.verify(verifier)) {
             LOG.warning("Guest token signature invalid");
@@ -83,9 +85,8 @@ public class GuestTokenFilter implements ContainerRequestFilter {
     }
 
     private void handleSupabaseToken(SignedJWT jwt, ContainerRequestContext ctx) throws Exception {
-        byte[] secret = jwtSecret.getBytes();
-        MACVerifier verifier = new MACVerifier(secret);
-        verifier.getJWSAlgorithmSet().add(JWSAlgorithm.HS256);
+        SecretKey key = new SecretKeySpec(jwtSecret.getBytes(), "HmacSHA256");
+        MACVerifier verifier = new MACVerifier(key, Collections.singleton(JWSAlgorithm.HS256.getName()));
 
         if (!jwt.verify(verifier)) {
             LOG.warning("Supabase token signature invalid");

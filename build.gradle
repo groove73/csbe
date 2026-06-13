@@ -32,6 +32,8 @@ dependencies {
     // Security & JWT
     implementation 'io.quarkus:quarkus-smallrye-jwt'
     implementation 'io.quarkus:quarkus-smallrye-jwt-build'
+    implementation 'com.nimbusds:nimbus-jose-jwt'  // HMAC JWT verification in GuestTokenFilter
+
 
     // gRPC (automatically runs on port 8080 by default alongside HTTP)
     implementation 'io.quarkus:quarkus-grpc'
