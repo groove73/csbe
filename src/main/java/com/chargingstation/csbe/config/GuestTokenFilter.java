@@ -1,6 +1,8 @@
 package com.chargingstation.csbe.config;
 
-import io.smallrye.jwt.auth.principal.JWTParser;
+import com.nimbusds.jose.JWSAlgorithm;
+import com.nimbusds.jose.crypto.MACVerifier;
+import com.nimbusds.jwt.SignedJWT;
 import jakarta.annotation.Priority;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
@@ -9,18 +11,18 @@ import jakarta.ws.rs.container.ContainerRequestContext;
 import jakarta.ws.rs.container.ContainerRequestFilter;
 import jakarta.ws.rs.ext.Provider;
 import org.eclipse.microprofile.config.inject.ConfigProperty;
-import org.eclipse.microprofile.jwt.JsonWebToken;
 
-import java.util.Base64;
 import java.util.logging.Logger;
 
 /**
- * Intercepts requests before SmallRye JWT validation.
- * Guest tokens are signed with HMAC-512 (app.jwt.secret), not RSA/JWKS like Supabase tokens.
- * This filter detects guest tokens by peeking at the JWT payload (without verification),
- * validates them manually, and removes them from the Authorization header so SmallRye JWT
- * won't attempt RSA verification (which would fail and return 401).
- * The guest email is stored as a request property for downstream use.
+ * Replicates the main-branch JwtIssuerAuthenticationManagerResolver approach in Quarkus.
+ *
+ * Two token types are accepted, both signed with app.jwt.secret:
+ *   - Supabase tokens  (iss = Supabase URL)  → HS256
+ *   - Guest tokens     (iss = "charging-station-guest") → HS512
+ *
+ * The filter runs before SmallRye JWT, strips the Authorization header so SmallRye JWT
+ * is bypassed, and stores guest identity in request properties for the controller.
  */
 @Provider
 @ApplicationScoped
@@ -28,15 +30,13 @@ import java.util.logging.Logger;
 public class GuestTokenFilter implements ContainerRequestFilter {
 
     private static final Logger LOG = Logger.getLogger(GuestTokenFilter.class.getName());
+
     private static final String GUEST_ISSUER = "charging-station-guest";
-    private static final String GUEST_EMAIL_PROPERTY = "guest.email";
+    static final String GUEST_EMAIL_PROPERTY = "guest.email";
 
     @Inject
     @ConfigProperty(name = "app.jwt.secret")
-    String guestSecret;
-
-    @Inject
-    JWTParser jwtParser;
+    String jwtSecret;
 
     @Override
     public void filter(ContainerRequestContext requestContext) {
@@ -46,42 +46,53 @@ public class GuestTokenFilter implements ContainerRequestFilter {
         }
 
         String token = authHeader.substring(7);
-        if (!isGuestToken(token)) {
-            return; // Leave Supabase tokens alone for SmallRye JWT to process
-        }
 
-        // It's a guest token — validate with HMAC secret and extract email
         try {
-            JsonWebToken jwt = jwtParser.verify(token, guestSecret);
-            String email = jwt.getSubject();
-            // Store guest email for the controller to read
-            requestContext.setProperty(GUEST_EMAIL_PROPERTY, email);
-            // Remove Authorization header so SmallRye JWT won't try RSA verification
-            requestContext.getHeaders().remove("Authorization");
+            SignedJWT jwt = SignedJWT.parse(token);
+            String issuer = jwt.getJWTClaimsSet().getIssuer();
+
+            if (GUEST_ISSUER.equals(issuer)) {
+                // Guest token: HS512
+                handleGuestToken(jwt, requestContext);
+            } else {
+                // Supabase token: HS256 — validate and strip so SmallRye JWT doesn't attempt JWKS
+                handleSupabaseToken(jwt, requestContext);
+            }
         } catch (Exception e) {
-            LOG.warning("Invalid guest token: " + e.getMessage());
-            // Remove the invalid header - SmallRye JWT won't see it, @PermitAll allows anonymous
+            LOG.warning("Failed to parse JWT: " + e.getMessage());
+            // Remove invalid token — @PermitAll endpoints will proceed anonymously
             requestContext.getHeaders().remove("Authorization");
         }
     }
 
-    /**
-     * Peeks at the JWT payload (without verification) to check if issuer is the guest issuer.
-     */
-    private boolean isGuestToken(String token) {
-        try {
-            String[] parts = token.split("\\.");
-            if (parts.length < 2) return false;
-            String payload = new String(Base64.getUrlDecoder().decode(padBase64(parts[1])));
-            return payload.contains("\"" + GUEST_ISSUER + "\"");
-        } catch (Exception e) {
-            return false;
+    private void handleGuestToken(SignedJWT jwt, ContainerRequestContext ctx) throws Exception {
+        byte[] secret = jwtSecret.getBytes();
+        MACVerifier verifier = new MACVerifier(secret);
+        verifier.getJWSAlgorithmSet().add(JWSAlgorithm.HS512);
+
+        if (!jwt.verify(verifier)) {
+            LOG.warning("Guest token signature invalid");
+            ctx.getHeaders().remove("Authorization");
+            return;
         }
+
+        String email = jwt.getJWTClaimsSet().getSubject();
+        ctx.setProperty(GUEST_EMAIL_PROPERTY, email);
+        // Remove from Authorization so SmallRye JWT does not interfere
+        ctx.getHeaders().remove("Authorization");
     }
 
-    private String padBase64(String base64) {
-        int padding = 4 - (base64.length() % 4);
-        if (padding < 4) base64 += "=".repeat(padding);
-        return base64;
+    private void handleSupabaseToken(SignedJWT jwt, ContainerRequestContext ctx) throws Exception {
+        byte[] secret = jwtSecret.getBytes();
+        MACVerifier verifier = new MACVerifier(secret);
+        verifier.getJWSAlgorithmSet().add(JWSAlgorithm.HS256);
+
+        if (!jwt.verify(verifier)) {
+            LOG.warning("Supabase token signature invalid");
+            ctx.getHeaders().remove("Authorization");
+            return;
+        }
+        // Valid Supabase token — remove header (SmallRye JWT not used in this setup)
+        ctx.getHeaders().remove("Authorization");
     }
 }
