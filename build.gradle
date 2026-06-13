@@ -23,8 +23,10 @@ dependencies {
     // REST and Jackson
     implementation 'io.quarkus:quarkus-rest'
     implementation 'io.quarkus:quarkus-rest-jackson'
+    implementation 'jakarta.ws.rs:jakarta.ws.rs-api'
+    implementation 'jakarta.inject:jakarta.inject-api'
 
-
+    // Force configuration synchronization
     // Database
     implementation 'io.quarkus:quarkus-hibernate-orm-panache'
     implementation 'io.quarkus:quarkus-jdbc-postgresql'
