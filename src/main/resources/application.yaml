@@ -1,10 +1,20 @@
-spring:
-  profiles:
-    active: ${profile:local}
-  main:
-    allow-bean-definition-overriding: true
-    lazy-initialization: true
-  jpa:
-    open-in-view: false
-server:
-  port: 8080
+# ============================================================
+# Common configuration (applied to all profiles)
+# ============================================================
+quarkus:
+  http:
+    port: 8080
+    auth:
+      proactive: false
+  smallrye-jwt:
+    silent: true
+
+# Application-level config (overridden per profile with defaults)
+app:
+  jwt:
+    secret: "${JWT_SECRET}"
+    expiration-ms: 604800000
+
+api:
+  charging:
+    key: "${CHARGING_API_KEY}"

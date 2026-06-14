@@ -4,41 +4,59 @@ import com.chargingstation.csbe.application.port.in.GetChargingStationUseCase;
 import com.chargingstation.csbe.application.service.GuestUsageService;
 import com.chargingstation.csbe.domain.Charger;
 import com.chargingstation.csbe.domain.ChargingStation;
-import lombok.RequiredArgsConstructor;
-import org.springframework.security.core.annotation.AuthenticationPrincipal;
-import org.springframework.security.oauth2.jwt.Jwt;
-import org.springframework.web.bind.annotation.*;
+import jakarta.annotation.security.PermitAll;
+import jakarta.inject.Inject;
+import jakarta.ws.rs.Consumes;
+import jakarta.ws.rs.GET;
+import jakarta.ws.rs.Path;
+import jakarta.ws.rs.PathParam;
+import jakarta.ws.rs.Produces;
+import jakarta.ws.rs.QueryParam;
+import jakarta.ws.rs.container.ContainerRequestContext;
+import jakarta.ws.rs.core.Context;
+import jakarta.ws.rs.core.MediaType;
+
 import java.util.List;
 import java.util.Map;
 
-@RestController
-@RequestMapping("/api/stations")
-@RequiredArgsConstructor
+@Path("/api/stations")
+@Produces(MediaType.APPLICATION_JSON)
+@Consumes(MediaType.APPLICATION_JSON)
 public class ChargingStationController {
 
     private final GetChargingStationUseCase getChargingStationUseCase;
     private final GuestUsageService guestUsageService;
 
-    @GetMapping
-    public List<ChargingStation> getStations(
-            @AuthenticationPrincipal Jwt jwt,
-            @RequestParam(required = false) String zcode) {
+    @Inject
+    public ChargingStationController(GetChargingStationUseCase getChargingStationUseCase, GuestUsageService guestUsageService) {
+        this.getChargingStationUseCase = getChargingStationUseCase;
+        this.guestUsageService = guestUsageService;
+    }
 
-        if (jwt != null && Boolean.TRUE.equals(jwt.getClaim("is_guest"))) {
-            String email = jwt.getSubject();
-            guestUsageService.checkAndIncrement(email);
+    @GET
+    @PermitAll
+    public List<ChargingStation> getStations(@QueryParam("zcode") String zcode,
+                                              @Context ContainerRequestContext requestContext) {
+        // GuestTokenFilter extracts guest email into request property "guest.email"
+        String guestEmail = (String) requestContext.getProperty("guest.email");
+        if (guestEmail != null) {
+            guestUsageService.checkAndIncrement(guestEmail);
         }
 
         return getChargingStationUseCase.getStations(zcode);
     }
 
-    @GetMapping("/regions")
+    @GET
+    @Path("/regions")
+    @PermitAll
     public Map<String, String> getRegions() {
         return getChargingStationUseCase.getRegions();
     }
 
-    @GetMapping("/{statId}/chargers")
-    public List<Charger> getChargerStatus(@PathVariable String statId) {
+    @GET
+    @Path("/{statId}/chargers")
+    @PermitAll
+    public List<Charger> getChargerStatus(@PathParam("statId") String statId) {
         return getChargingStationUseCase.getChargerStatus(statId);
     }
 }

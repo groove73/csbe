@@ -1,38 +1,34 @@
 package com.chargingstation.csbe.config;
 
-import org.springframework.beans.factory.annotation.Value;
-import org.springframework.stereotype.Component;
-import org.springframework.security.oauth2.jwt.JwtClaimsSet;
-import org.springframework.security.oauth2.jwt.JwtEncoder;
-import org.springframework.security.oauth2.jwt.JwtEncoderParameters;
-import org.springframework.security.oauth2.jose.jws.MacAlgorithm;
-import org.springframework.security.oauth2.jwt.JwsHeader;
+import io.smallrye.jwt.build.Jwt;
+import jakarta.enterprise.context.ApplicationScoped;
+import jakarta.inject.Inject;
+import org.eclipse.microprofile.config.inject.ConfigProperty;
 
-import java.time.Instant;
+import java.util.Date;
 
-@Component
+@ApplicationScoped
 public class JwtProvider {
 
-    private final JwtEncoder jwtEncoder;
+    @Inject
+    @ConfigProperty(name = "app.jwt.expiration-ms", defaultValue = "604800000")
+    long expirationMs;
 
-    @Value("${app.jwt.expiration-ms:604800000}") // Default 7 days
-    private long expirationMs;
-
-    public JwtProvider(JwtEncoder jwtEncoder) {
-        this.jwtEncoder = jwtEncoder;
-    }
+    @Inject
+    @ConfigProperty(name = "app.jwt.secret")
+    String guestSecret;
 
     public String generateGuestToken(String email) {
-        Instant now = Instant.now();
-        JwtClaimsSet claims = JwtClaimsSet.builder()
+        long now = System.currentTimeMillis();
+        return Jwt.claims()
                 .subject(email)
-                .claim("iss", "charging-station-guest")
+                .issuer("charging-station-guest")
                 .claim("is_guest", true)
-                .issuedAt(now)
-                .expiresAt(now.plusMillis(expirationMs))
-                .build();
-
-        JwsHeader jwsHeader = JwsHeader.with(MacAlgorithm.HS512).build();
-        return jwtEncoder.encode(JwtEncoderParameters.from(jwsHeader, claims)).getTokenValue();
+                .issuedAt(now / 1000)
+                .expiresAt((now + expirationMs) / 1000)
+                .jws()
+                .keyId("guest-key")
+                .signWithSecret(guestSecret);
     }
 }
+

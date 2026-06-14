@@ -1,36 +1,30 @@
-server:
-  port: ${PORT:8080}
-
-cors:
-  allowed-origins: ${ALLOWED_ORIGINS:http://localhost:3000}
-
-api:
-  charging:
-    key: ${CHARGING_API_KEY:myKey}
-
-spring:
-  main:
-    allow-bean-definition-overriding: true
+# ============================================================
+# Prod profile  (active in packaged jar / Railway deployment)
+# All secrets MUST be provided via environment variables.
+# ============================================================
+quarkus:
+  http:
+    cors:
+      enabled: true
+      # Set CORS_ORIGINS env var in Railway (comma-separated, no spaces)
+      # e.g. https://csfe-three.vercel.app,https://your-custom-domain.com
+      origins: "${CORS_ORIGINS:https://csfe-three.vercel.app}"
+      methods: "GET,POST,PUT,DELETE,OPTIONS"
+      headers: "Authorization,Content-Type,X-Guest-ID"
+      access-control-allow-credentials: true
   datasource:
-    url: ${DB_URL:myKey}
-    username: ${DB_USER:myKey}
-    password: ${DB_PASSWORD:myKey}
-    driver-class-name: org.postgresql.Driver
-  jpa:
-    hibernate:
-      ddl-auto: update
-    properties:
-      hibernate:
-        dialect: org.hibernate.dialect.PostgreSQLDialect
-  security:
-    oauth2:
-      resourceserver:
-        jwt:
-          jwk-set-uri: https://xvzylaubzixvlrzjrdon.supabase.co/auth/v1/.well-known/jwks.json
-          # Changed to HS256 (Shared Secret) validation per user request
-
-app:
-  jwt:
-    secret: ${JWT_SECRET:myKey}
-  oauth2:
-    redirect-uri: ${OAUTH2_REDIRECT_URI:http://localhost:3000} ## 미사용
+    db-kind: postgresql
+    username: "${DB_USER}"
+    password: "${DB_PASSWORD}"
+    jdbc:
+      url: "${DB_URL:jdbc:postgresql://aws-1-ap-southeast-1.pooler.supabase.com:6543/postgres?prepareThreshold=0}"
+      max-size: 10
+  hibernate-orm:
+    database:
+      generation: none  # No DDL in prod — manage schema manually
+    sql-load-script: no-file
+  log:
+    level: WARN
+    category:
+      "com.chargingstation":
+        level: INFO

@@ -1,22 +1,15 @@
 plugins {
     id 'java'
-    id 'org.springframework.boot' version '3.2.1'
-    id 'io.spring.dependency-management' version '1.1.4'
+    id 'io.quarkus' version '3.36.1'
 }
 
 group = 'com.chargingstation'
 version = '0.0.7-SNAPSHOT'
 
 java {
-        toolchain {
-                languageVersion = JavaLanguageVersion.of(21)
-        }
-}
-
-configurations {
-        compileOnly {
-                extendsFrom annotationProcessor
-        }
+    toolchain {
+        languageVersion = JavaLanguageVersion.of(25)
+    }
 }
 
 repositories {
@@ -24,19 +17,37 @@ repositories {
 }
 
 dependencies {
-    implementation ('org.springframework.boot:spring-boot-starter-web') {
-        exclude module: 'spring-boot-starter-tomcat'
-    }
-    implementation 'org.springframework.boot:spring-boot-starter-undertow'
-    implementation 'org.springframework.boot:spring-boot-starter-security'
-    implementation 'org.springframework.boot:spring-boot-starter-oauth2-resource-server'
-    implementation 'org.springframework.boot:spring-boot-starter-data-jpa'
-    implementation 'org.postgresql:postgresql'
-    implementation 'com.fasterxml.jackson.core:jackson-databind'
-    compileOnly 'org.projectlombok:lombok'
-    annotationProcessor 'org.projectlombok:lombok'
+    // Quarkus Platform BOM
+    implementation enforcedPlatform("io.quarkus.platform:quarkus-bom:3.36.1")
 
-    implementation 'org.springframework.boot:spring-boot-starter-test'
+    // REST and Jackson
+    implementation 'io.quarkus:quarkus-rest'
+    implementation 'io.quarkus:quarkus-rest-jackson'
+    implementation 'jakarta.ws.rs:jakarta.ws.rs-api'
+    implementation 'jakarta.inject:jakarta.inject-api'
+
+    // Force configuration synchronization
+    // Database
+    implementation 'io.quarkus:quarkus-hibernate-orm-panache'
+    implementation 'io.quarkus:quarkus-jdbc-postgresql'
+
+    // Security & JWT
+    implementation 'io.quarkus:quarkus-smallrye-jwt'
+    implementation 'io.quarkus:quarkus-smallrye-jwt-build'
+    implementation 'com.nimbusds:nimbus-jose-jwt'  // HMAC JWT verification in GuestTokenFilter
+
+
+    // gRPC (automatically runs on port 8080 by default alongside HTTP)
+    implementation 'io.quarkus:quarkus-grpc'
+    implementation 'io.quarkus:quarkus-config-yaml'
+
+    // Test
+    testImplementation 'io.quarkus:quarkus-junit5'
+}
+
+tasks.withType(JavaCompile).configureEach {
+    options.encoding = 'UTF-8'
+    options.compilerArgs << '-parameters'
 }
 
 tasks.named('test') {
